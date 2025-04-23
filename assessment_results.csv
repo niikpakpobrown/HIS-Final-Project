@@ -1,0 +1,11 @@
+age,gender,education_level,bmi,physical_activity_level,smoking_status,alcohol_consumption,diabetes,hypertension,cholesterol_level,family_history,cognitive_test_score,depression_level,sleep_quality,dietary_habits,air_pollution_exposure,employment_status,marital_status,genetic_risk_factor,social_engagement_level,income_level,stress_levels,urban_vs_rural_living,assessment_date,prediction,probability,patient_id,name,birthdate
+18,Male,0,10.0,Low,Never,Never,No,No,Normal,No,0,Low,Average,Average,Low,Employed,Single,No,Low,Low,Low,Urban,2025-04-22,Low Risk,0.02,,,
+65,Female,0,10.0,Low,Never,Never,No,No,Normal,No,0,Low,Average,Average,Low,Employed,Single,No,High,Low,High,Urban,2025-04-22,Low Risk,0.31,,,
+18,Female,0,10.0,Low,Never,Never,No,No,Normal,No,0,Low,Average,Average,Low,Employed,Single,No,Low,Low,Low,Urban,2025-04-22,Low Risk,0.02,d3f0f024,Ashna Patel,2015-09-17
+18,Male,0,10.0,Low,Never,Never,No,No,Normal,No,0,Low,Average,Average,Low,Employed,Single,No,Low,Low,Low,Urban,2025-04-22,Low Risk,0.02,d3f0f024,Ashna Patel,2015-09-17
+18,Male,14,22.8,Low,Never,Never,No,No,High,No,20,Low,Average,Average,Low,Employed,Single,No,Low,Low,Low,Urban,2025-04-22,Low Risk,0.02,d3f0f024,Ashna Patel,2015-09-17
+30,Female,0,10.0,Low,Never,Never,No,No,Normal,No,0,Low,Average,Average,Low,Employed,Single,No,Low,Low,Low,Urban,2025-04-22,Low Risk,0.04,d3f0f024,Ashna Patel,2015-09-17
+30,Female,0,10.0,Low,Never,Never,No,No,Normal,No,0,Low,Average,Average,Low,Employed,Single,No,Low,Low,Low,Urban,2025-04-22,Low Risk,0.04,d3f0f024,Ashna Patel,2015-09-17
+30,Female,0,10.0,Low,Never,Never,No,No,Normal,No,0,Low,Average,Average,Low,Employed,Single,No,Low,Low,Low,Urban,2025-04-22,Low Risk,0.04,d3f0f024,Ashna Patel,2015-09-17
+30,Female,0,10.0,Low,Never,Never,No,No,Normal,No,0,Low,Average,Average,Low,Employed,Single,No,Low,Low,Low,Urban,2025-04-22,Low Risk,0.04,d3f0f024,Ashna Patel,2015-09-17
+30,Female,0,10.0,Low,Never,Never,No,No,Normal,No,0,Low,Average,Average,Low,Employed,Single,No,Low,Low,Low,Urban,2025-04-22,Low Risk,0.04,d3f0f024,Ashna Patel,2015-09-17
