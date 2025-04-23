@@ -1,0 +1,7 @@
+[theme]
+base = "light"
+primaryColor = "#2c6eaa"               # calming blue for buttons/accents
+backgroundColor = "#ffffff"           # white background
+secondaryBackgroundColor = "#f2f7fb"  # sidebar/forms background (soft clinical blue-grey)
+textColor = "#1a1a1a"                 # clean dark grey text
+font = "sans serif"
