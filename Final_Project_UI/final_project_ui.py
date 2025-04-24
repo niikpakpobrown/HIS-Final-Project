@@ -2,15 +2,21 @@
 # To run the UI please open git bash and use this command line
 # % streamlit run final_project_ui.py
 import streamlit as st
+from streamlit_option_menu import option_menu
 import pandas as pd
 import datetime
+import altair as alt
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 # Page setup
 st.set_page_config(
     page_title="Alzheimer's Risk Assessment and Diagnosis Decision Support Tool",
     layout="centered")
 
-def run_app():
+
+
+def assessment_page():
     st.title("Alzheimer's Risk Assessment and Diagnosis Decision Support Tool")
 
     st.markdown("This tool collects lifestyle and risk factors to assist in evaluating cognitive health and potential alzheimer's risk.")
@@ -102,27 +108,27 @@ def run_app():
     {
         "feature": "_age",
         "condition": lambda x: x > 65,
-        "recommendation": "Age is non-modifiable. Focus on healthy habits like physical activity and brain games."
+        "recommendation": "Given the patient’s advanced age, schedule routine cognitive assessments annually. Reinforce preventive care and encourage cognitive enrichment activities."
     },
     {
         "feature": "_genetic_risk_factor_Yes",
         "condition": lambda x: x == "Yes",
-        "recommendation": "Patient is good here!"
+        "recommendation": "Patient carries the APOE-ε4 allele. Recommend close monitoring, and emphasize aggressive management of modifiable risk factors."
     },
     {
         "feature": "_family_history_Yes",
         "condition": lambda x: x == "Yes",
-        "recommendation": "Patient is good here!"
+        "recommendation": "Patient has family history. Recommend initiating baseline cognitive screening and documenting lifestyle risk factors for longitudinal tracking."
     },
     {
         "feature": "_social_engagement_level_Low",
         "condition": lambda x: x == "Low",
-        "recommendation": "Increase social interaction: Join clubs, call friends, or volunteer."
+        "recommendation": "Patient has low social engagement. Counsel the patient on the importance of regular social interaction; consider referring to community programs or support groups."
     },
     {
         "feature": "_air_pollution_exposure_Medium",
         "condition": lambda x: x == "Medium",
-        "recommendation": "Stay indoors on polluted days, use air purifiers at home."
+        "recommendation": "Moderate exposure to air pollution noted. Educate on minimizing exposure during high AQI days and suggest in-home air purification if feasible."
     }
 ]
 
@@ -132,7 +138,7 @@ def run_app():
     import joblib
     
     # Load model and scaler
-    model = joblib.load("model.pkl")
+    model = joblib.load("Final_Project_UI/model.pkl")
     #scaler = joblib.load("scaler.pkl")
     
     # Define prediction function
@@ -149,14 +155,10 @@ def run_app():
         userinput["probability"] = round(probability, 2)
        
         # Determine risk level and style
-        if probability <= 0.3:
+        if probability <= 0.5:
             risk_level = "🟢  Low Risk"
             bg_color = "#d4edda"  # light green
             text_color = "#155724"
-        elif probability <= 0.7:
-            risk_level = "🟡  Moderate Risk"
-            bg_color = "#fff3cd"  # light yellow
-            text_color = "#856404"
         else:
             risk_level = "🔴  High Risk"
             bg_color = "#f8d7da"  # light red
@@ -170,7 +172,7 @@ def run_app():
         """, unsafe_allow_html=True)
         
         # Save to CSV
-        save_path = "assessment_results.csv"
+        save_path = "Final_Project_UI/assessment_results.csv"
         try:
             df_existing = pd.read_csv(save_path)
         except FileNotFoundError:
@@ -199,9 +201,6 @@ def run_app():
 
             # Ensure datetime format
             patient_history["assessment_date"] = pd.to_datetime(patient_history["assessment_date"], errors="coerce").dt.date
-    
-            # Plot risk score over time
-            import altair as alt
 
             chart = alt.Chart(patient_history).mark_line(point=True).encode(
                 x=alt.X('assessment_date:T', title='Assessment Date'),
@@ -218,21 +217,44 @@ def run_app():
             # Show recommendations if risk is > 20%
         if probability > 0.2:
             st.subheader("Lifestyle Recommendations")
+            # for rec in recommendations_data:
+            #     feature_key = rec["feature"]
+            #     condition = rec["condition"]
+                
+            #     # Pull the clean version of the field name
+            #     if "_age" in feature_key and condition(age):
+            #         st.write(f"Age: **{rec['recommendation']}**")
+            #     elif "genetic_risk_factor" in feature_key and condition(genetic_risk):
+            #         st.write(f"Risk Factor **{rec['recommendation']}**")
+            #     elif "family_history" in feature_key and condition(family_history):
+            #         st.write(f"Family History **{rec['recommendation']}**")
+            #     elif "social_engagement_level" in feature_key and condition(social_engagement):
+            #         st.write(f"Social Engagement **{rec['recommendation']}**")
+            #     elif "air_pollution_exposure" in feature_key and condition(air_pollution):
+            #         st.write(f"Air Pollution **{rec['recommendation']}**")
             for rec in recommendations_data:
                 feature_key = rec["feature"]
                 condition = rec["condition"]
-                
-                # Pull the clean version of the field name
+
                 if "_age" in feature_key and condition(age):
-                    st.markdown(f" **{rec['recommendation']}**")
+                    label = "Age-Related"
                 elif "genetic_risk_factor" in feature_key and condition(genetic_risk):
-                    st.markdown(f" **{rec['recommendation']}**")
+                    label = "Genetic Risk"
                 elif "family_history" in feature_key and condition(family_history):
-                    st.markdown(f" **{rec['recommendation']}**")
+                    label = "Family History"
                 elif "social_engagement_level" in feature_key and condition(social_engagement):
-                    st.markdown(f" **{rec['recommendation']}**")
+                    label = "Social Engagement"
                 elif "air_pollution_exposure" in feature_key and condition(air_pollution):
-                    st.markdown(f" **{rec['recommendation']}**")
+                    label = "Environmental Exposure"
+                else:
+                    continue
+
+                st.markdown(f"""
+                <div style='border: 1px solid #ddd; padding: 1rem; border-radius: 8px; margin-bottom: 10px;'>
+                    <div style='font-weight: bold; font-size: 1.05rem; margin-bottom: 0.3rem;'>{label}</div>
+                    <div style='font-size: 0.9rem;'>{rec['recommendation']}</div>
+                </div>
+                """, unsafe_allow_html=True)
     
     
     # --- Submit and Evaluate ---
@@ -250,7 +272,366 @@ def run_app():
     st.sidebar.info("""This is an Alzheimer's Diagnosis Decision Support System prototype. 
                     While this tool can be used to provide a preliminary insight on a patient's 
                     potential risk of Alzheimer's, it is not a clinical diagnosis.""")
+
+def get_bmi_category(bmi):
+    try:
+        if bmi < 18.5:
+            return "Underweight"
+        elif bmi < 25:
+            return "Normal"
+        elif bmi < 30:
+            return "Overweight"
+        else:
+            return "Obese"
+    except:
+        return "Unknown"
+
+def patient_search_page():
+
+    st.title("Patient Search")
+
+    search_by = st.radio("Search by", ["Patient Name", "Patient ID"])
+    search_term = st.text_input(f"Enter {search_by}")
+
+    try:
+        df = pd.read_csv("Final_Project_UI/assessment_results.csv")
+        # --- Show latest assessment per patient ---
+        st.markdown("#### Latest Visits")
+
+        # Convert to datetime
+        df["assessment_date"] = pd.to_datetime(df["assessment_date"], errors="coerce")
+
+        # Sort by date and keep only latest record per patient_id
+        latest_visits_df = df.sort_values("assessment_date", ascending=False).drop_duplicates(subset=["patient_id"])
+
+        # Select key columns to display
+        cols_to_display = [
+            "patient_id", "name", "birthdate", "age", "gender", "assessment_date",
+            "prediction", "probability"
+        ]
+
+        # Ensure all columns are present
+        latest_visits_df = latest_visits_df[[col for col in cols_to_display if col in latest_visits_df.columns]]
+
+        # Show in a clean table
+        st.dataframe(
+            latest_visits_df.sort_values(by="assessment_date", ascending=False).reset_index(drop=True),
+            use_container_width=True
+        )
+    except FileNotFoundError:
+        st.warning("No assessment data found yet.")
+        return
+
+    if search_term:
+        # Handle missing values in search
+        if search_by == "Patient Name":
+            filtered = df[df["name"].fillna('').str.lower().str.contains(search_term.strip().lower())]
+
+        else:
+            filtered = df[df["patient_id"].fillna('').str.contains(search_term.strip())]
+
+        if not filtered.empty:
+            st.success(f"Found {len(filtered)} record(s).")
+            patient_ids = filtered["patient_id"].unique()
+
+            for pid in patient_ids:
+                st.markdown("<hr style='border: 2px solid #333;'>", unsafe_allow_html=True)
+                st.subheader(f"Records for Patient ID: {pid}")
+                patient_data = filtered[filtered["patient_id"] == pid].copy()
+                patient_data["assessment_date"] = pd.to_datetime(patient_data["assessment_date"], errors="coerce")
+
+                # Sort and select the most recent record
+                latest = patient_data.sort_values("assessment_date", ascending=False).iloc[0]
+
+                # --- Top panel layout ---
+                st.markdown("#### Patient Summary")
+                col1, col2, col3 = st.columns([2, 2, 1])
+                ss_space =  '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'
+                s_space =  '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'
+                space6 = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'
+                space = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'
+                with col1:
+                    st.markdown(f"**Name:**{space}&nbsp;{latest["name"]}")
+                    st.markdown(f"**Gender:** {s_space}{latest["gender"]}")
+                   
+                with col2:
+                    st.markdown(f"**Birthdate:** {space6}&nbsp;{latest["birthdate"]}")
+                    st.markdown(f"**Age:**{space}{space6}{latest['age']}")
+
+                with col3:
+                    st.markdown("**Risk Assessment**")
+                    if latest["prediction"] == "High Risk":
+                        bg_color = "#dc3545"  # Strong red
+                        text_color = "#ffffff"
+                    elif latest["prediction"] == "Moderate Risk":
+                        bg_color = "#ffc107"
+                        text_color = "#000000"
+                    else:
+                        bg_color = "#28a745"
+                        text_color = "#ffffff"
+                    st.markdown(f"""
+                    <div style='background-color:{bg_color}; color:{text_color}; 
+                                padding: 1rem; border-radius: 8px; text-align: center; 
+                                font-weight: bold; font-size: 1.1rem;'>
+                        {latest["prediction"]}<br>
+                        Probability: {latest["probability"]:.2f}
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                st.markdown("---")
+
+                # --- Demographics Section ---
+                st.markdown("#### Demographics")
+                col1, col2, col3 = st.columns([2, 2, 1])
+                with col1:
+                    st.markdown(f"**Education:** {ss_space}{latest["education_level"]}")
+                    st.markdown(f"**Income:** {s_space}&nbsp;&nbsp;&nbsp;{latest["income_level"]}")
+                    st.markdown(f"**Employment:** &nbsp;&nbsp;&nbsp;{latest["employment_status"]}")
+                with col2:
+                    st.markdown(f"**Marital Status:** {ss_space}{ss_space}{latest["marital_status"]}")
+                    st.markdown(f"**Living Environment:** {space6}{latest["urban_vs_rural_living"]}")
+
                 
+                # --- Medical History Section ---
+                st.markdown("---")
+                st.markdown("#### Medical & Genetic History")
+                col1, col2, col3 = st.columns([2, 2, 1])
+                with col1: 
+                    # --- BMI + Category on same line ---
+                    bmi_value = latest['bmi']
+                    bmi_category = get_bmi_category(bmi_value)
+
+                    # Define style colors per category
+                    bmi_styles = {
+                        "Underweight": {"bg": "#fff3cd", "text": "#856404"},
+                        "Overweight": {"bg": "#fff3cd", "text": "#856404"},
+                        "Obese": {"bg": "#f8d7da", "text": "#721c24"},
+                    }
+
+                    style = bmi_styles.get(bmi_category, {"bg": "#e2e3e5", "text": "#383d41"})  # fallback
+
+                    st.markdown(f"""
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                        <div><strong>BMI:</strong>{space}{space6}</div>
+                        <div>{bmi_value:.1f}</div>
+                        <div style="background-color: {style['bg']}; color: {style['text']}; 
+                                    padding: 3px 10px; border-radius: 6px; font-size: 0.85rem;">
+                            {bmi_category}
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    # --- Diabetes
+                    if str(latest['diabetes']).lower() == "yes":
+                        st.markdown(f"**Diabetes:** {s_space}&nbsp;<span style='color: #dc3545; font-weight: bold;'>{latest['diabetes']} </span>", unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"**Diabetes:** {s_space}&nbsp;{latest['diabetes']}")
+
+                    # --- Hypertension
+                    if str(latest['hypertension']).lower() == "yes":
+                        st.markdown(f"**Hypertension:** &nbsp;&nbsp;&nbsp;<span style='color: #dc3545; font-weight: bold;'>{latest['hypertension']} </span>", unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"**Hypertension:** &nbsp;&nbsp;&nbsp;{latest['hypertension']}")
+                with col2: 
+                    # --- Cholesterol ---
+                    chol = latest["cholesterol_level"]
+                    if str(chol).lower() == "high":
+                        st.markdown(f"**Cholesterol:** {space}{ss_space}<span style='color: #dc3545; font-weight: bold;'>{chol}</span>", unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"**Cholesterol:** {space}{ss_space}{chol}")
+
+                    # --- Genetic Risk ---
+                    genetic_risk = latest["genetic_risk_factor"]
+                    if str(genetic_risk).lower() == "yes":
+                        st.markdown(f"**Genetic Risk:** &nbsp;{s_space}{ss_space}<span style='color: #dc3545; font-weight: bold;'>Yes</span>", unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"**Genetic Risk:** &nbsp;{s_space}{ss_space}{genetic_risk}")
+
+                    # --- Family History ---
+                    family_history = latest["family_history"]
+                    if str(family_history).lower() == "yes":
+                        st.markdown(f"**Family History:** {ss_space}{ss_space}<span style='color: #dc3545; font-weight: bold;'>Yes</span>", unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"**Family History:** {ss_space}{ss_space}{family_history}")
+
+                    # --- Cognitive Test Score with warning
+                    cog_score = latest["cognitive_test_score"]
+                    if pd.notnull(cog_score) and cog_score < 70:
+                        st.markdown(f"""
+                        **Cognitive Test Score:** {space6}{cog_score}&nbsp;
+                        <span style='color: #721c24; background-color: #f8d7da; padding: 2px 8px; border-radius: 4px; font-size: 0.85rem;'>
+                            Low
+                        </span>
+                        """, unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"**Cognitive Test Score:** {ss_space}{cog_score}")
+
+                # --- Lifestyle Section ---
+                st.markdown("---")
+                st.markdown("#### Lifestyle & Environmental Factors")
+                col1, col2, col3 = st.columns([2, 2, 1])
+
+                # Risk highlighting function
+                def highlight(value, risks):
+                    return f"<span style='color: #dc3545; font-weight: bold;'>{value}</span>" if str(value).lower() in risks else value
+
+                with col1:
+                    smoking = highlight(latest["smoking_status"], ["current"])
+                    alcohol = highlight(latest["alcohol_consumption"], ["regularly"])
+                    st.markdown(f"**Smoking:** {s_space}{space6}{smoking}", unsafe_allow_html=True)
+                    st.markdown(f"**Alcohol:** {s_space}{space6}&nbsp;&nbsp;&nbsp;{alcohol}", unsafe_allow_html=True)
+                    st.markdown(f"**Physical Activity:** &nbsp;&nbsp;{latest['physical_activity_level']}", unsafe_allow_html=True)
+                    diet = highlight(latest["dietary_habits"], ["unhealthy"])
+                    sleep = highlight(latest["sleep_quality"], ["poor"])
+                    st.markdown(f"**Dietary Habits:** {space6}&nbsp;{diet}", unsafe_allow_html=True)
+                    st.markdown(f"**Sleep Quality:** {ss_space}{sleep}", unsafe_allow_html=True)
+
+                with col2:
+                    stress = highlight(latest["stress_levels"], ["high"])
+                    st.markdown(f"**Stress Levels:** {space}{space6}{stress}", unsafe_allow_html=True)
+                    depression = highlight(latest["depression_level"], ["high"])
+                    pollution = highlight(latest["air_pollution_exposure"], ["high"])
+                    engagement = highlight(latest["social_engagement_level"], ["low"])
+                    st.markdown(f"**Depression Level:** {s_space}{depression}", unsafe_allow_html=True)
+                    st.markdown(f"**Air Pollution:** {space}{space6}&nbsp;{pollution}", unsafe_allow_html=True)
+                    st.markdown(f"**Social Engagement:** {space6}&nbsp;&nbsp;{engagement}", unsafe_allow_html=True)
+                    
+
+
+                # --- Assessment Date ---
+                st.markdown("<hr style='border: 2px solid #333;'>", unsafe_allow_html=True)
+                st.markdown("#### Latest Assessment Date")
+                st.info(f"{latest['assessment_date'].date() if pd.notnull(latest['assessment_date']) else 'N/A'}")
+
+                # --- Chart Section ---
+                st.markdown("#### Risk Probability Over Time")
+                st.altair_chart(
+                    alt.Chart(patient_data).mark_line(point=True).encode(
+                        x="assessment_date:T",
+                        y="probability:Q",
+                        tooltip=["assessment_date:T", "probability:Q"]
+                    ).properties(height=250),
+                    use_container_width=True
+                )
+        else:
+            st.warning("No matching records found.")
+
+def population_overview_page():
+    st.title("Population Overview")
+    st.write("This section provides a snapshot of the patient population in the dataset.")
+
+    # Load dataset
+    data = pd.read_csv("Datasets/alzheimers_prediction_dataset_usa_lc.csv")
+    data.rename(columns={"Alzheimer’s Diagnosis": "Alzheimer's Diagnosis"}, inplace=True)
+    data.drop(columns=['country'], inplace=True)
+
+    # Define continuous and categorical features
+    con_features = ['age', 'education_level', 'bmi', 'cognitive_test_score']
+    cat_features = data.select_dtypes(include='object').columns.drop("Alzheimer's Diagnosis")
+
+    # --- Continuous Feature Plotting ---
+    def plot_continuous_distributions(data, con_features):
+        sns.set_palette(['#add8e6', '#ffcc99'])
+
+        fig, ax = plt.subplots(len(con_features), 2, figsize=(15, 2.5 * len(con_features)), gridspec_kw={'width_ratios': [1, 2]})
+
+        for i, col in enumerate(con_features):
+            graph = sns.barplot(data=data, x="Alzheimer's Diagnosis", y=col, ax=ax[i, 0], palette=['#add8e6', '#ffcc99'])
+
+            sns.kdeplot(data=data[data["Alzheimer's Diagnosis"] == 'No'], x=col, fill=True, ax=ax[i, 1], color='#add8e6', label='No')
+            sns.kdeplot(data=data[data["Alzheimer's Diagnosis"] == 'Yes'], x=col, fill=True, ax=ax[i, 1], color='#ffcc99', label='Yes')
+
+            ax[i, 1].set_yticks([])
+            ax[i, 1].legend(loc='upper right')
+
+            for cont in graph.containers:
+                graph.bar_label(cont, fmt='%.1f')
+
+        plt.tight_layout()
+        st.pyplot(fig)
+
+    # --- Categorical Feature Plotting ---
+    def plot_categorical_distribution(data, cat_features):
+        alz_yes = data[data["Alzheimer's Diagnosis"] == "Yes"]
+        alz_no = data[data["Alzheimer's Diagnosis"] == "No"]
+
+        n_features = len(cat_features)
+        n_cols = 2  # Two plots per row
+        n_rows = (n_features + n_cols - 1) // n_cols
+
+        fig, ax = plt.subplots(n_rows, n_cols, figsize=(40, 10 * n_rows))  # Larger figure
+        ax = ax.flatten()
+
+        for i, col in enumerate(cat_features):
+            yes_pct = alz_yes[col].value_counts(normalize=True).mul(100).sort_index()
+            no_pct = alz_no[col].value_counts(normalize=True).mul(100).sort_index()
+            all_categories = yes_pct.index.union(no_pct.index)
+
+            yes_pct = yes_pct.reindex(all_categories, fill_value=0)
+            no_pct = no_pct.reindex(all_categories, fill_value=0)
+
+            plot_df = pd.DataFrame({'Yes': yes_pct, 'No': no_pct})
+
+            plot_df.plot(kind='barh', ax=ax[i], color=['#ffcc99', '#add8e6'], width=0.6)
+
+            for bar_group in ax[i].containers:
+                for bar in bar_group:
+                    width = bar.get_width()
+                    if width > 0:
+                        ax[i].text(width + 1.5, bar.get_y() + bar.get_height() / 2, f'{width:.1f}%',
+                                va='center', ha='left', fontsize=12)
+
+            ax[i].set_xlabel('Percentage', fontsize=34)
+            ax[i].set_ylabel(col, fontsize=34)
+            ax[i].set_title(col, fontsize=36)
+            ax[i].tick_params(axis='both', labelsize=28)
+            ax[i].grid(axis='x', linestyle='--', linewidth=0.7)
+            ax[i].legend(title='', fontsize=32)
+
+        for j in range(len(cat_features), len(ax)):
+            ax[j].axis('off')
+
+        plt.tight_layout()
+        plt.subplots_adjust(top=1)
+        st.pyplot(fig)
+      # Plotting sections
+    st.subheader("Distribution of Continuous Features")
+    plot_continuous_distributions(data, con_features)
+
+    st.subheader("Distribution of Categorical Features")
+    plot_categorical_distribution(data, cat_features)
+
+# --- Sidebar navigation ---
+with st.sidebar:
+    selected = option_menu(
+        menu_title="",
+        options=[
+            "Welcome",
+            "Risk Assessment",
+            "Patient Search",
+            "Population Overview"
+        ],
+        icons=[
+            "wave", "gear", "person", "bar-chart"
+        ],
+        default_index=0
+    )
+
+def run_app():
+    # st.sidebar.title("Navigation")
+    # page = st.sidebar.radio("Go to", ["Alzheimer's Risk Assessment", "Patient Search"])
+
+    # if page == "Alzheimer's Risk Assessment":
+    #     assessment_page()
+    # elif page == "Patient Search":
+    #     patient_search_page()  
+    if selected == 'Patient Search':
+        patient_search_page()  
+    elif selected == 'Risk Assessment':
+        assessment_page()
+    elif selected == 'Population Overview':
+        population_overview_page()
+
                     
 # --- Authentication flow ---
 USERNAME = "clinician"
