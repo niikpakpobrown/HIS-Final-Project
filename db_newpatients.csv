@@ -1,0 +1,8 @@
+age,gender,education_level,bmi,physical_activity_level,smoking_status,alcohol_consumption,diabetes,hypertension,cholesterol_level,family_history,cognitive_test_score,depression_level,sleep_quality,dietary_habits,air_pollution_exposure,employment_status,marital_status,genetic_risk_factor,social_engagement_level,income_level,stress_levels,urban_vs_rural_living,assessment_date,prediction,probability,patient_id,name,birthdate,physician_id
+73,Male,12,25,Medium,Former,Occasionally,Yes,No,Normal,No,72,Medium,Poor,Unhealthy,Medium,Retired,Married,Yes,Low,Medium,High,Urban,2025-04-01,High Risk,0.6800,3ff18f07,Max Armstrong,1952-04-03,D01
+73,Male,12,25,Medium,Former,Occasionally,Yes,Yes,Normal,Yes,53,Medium,Poor,Unhealthy,Medium,Retired,Married,Yes,Low,Medium,Medium,Urban,2025-04-23,High Risk,0.8200,3ff18f07,Max Armstrong,1952-04-03,D01
+69,Female,6,18,Medium,Never,Regularly,Yes,Yes,High,Yes,40,Medium,Poor,Unhealthy,Medium,Unemployed,Widowed,Yes,High,Low,Medium,Urban,2025-03-14,High Risk,0.7000,7febe54d,Olivia Carter,1956-10-25,D01
+58,Male,14,20,Low,Current,Regularly,No,No,Normal,No,86,Low,Good,Healthy,Low,Employed,Married,No,High,High,Low,Urban,2025-04-24,Low Risk,0.1500,1607895d,Ethan Brooks,2025-04-24,D01
+18,Male,0,36,Low,Never,Never,No,No,Normal,No,0,Low,Average,Average,Low,Employed,Single,No,Low,Low,Low,Urban,2025-04-24,Low Risk,0.0200,d3f0f024,Ashna Patel,2015-09-17,D01
+69,Male,11,26,Medium,Former,Occasionally,Yes,No,High,Yes,46,Low,Average,Healthy,Low,Retired,Widowed,No,Low,Medium,Low,Urban,2025-04-24,High Risk,0.5500,6df14edc,Ryan Huang,1956-11-08,D01
+65,Female,5,20,Medium,Never,Never,Yes,Yes,High,No,84,Low,Average,Healthy,Low,Retired,Widowed,Yes,Low,Medium,Low,Urban,2025-04-24,High Risk,0.6700,697c9a80,Emma Johnson,1960-06-17,D01
