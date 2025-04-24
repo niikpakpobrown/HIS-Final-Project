@@ -8,6 +8,8 @@ import datetime
 import altair as alt
 import matplotlib.pyplot as plt
 import seaborn as sns
+import psycopg2
+from psycopg2 import sql
 
 # Page setup
 st.set_page_config(
@@ -25,7 +27,54 @@ if "user_type" not in st.session_state:
     st.session_state.menu_selection = menu
 else:
     menu = st.session_state.user_type
-    
+
+def insert_into_database(df):
+    try:
+        conn = psycopg2.connect(
+            dbname="HIS_FinalProject",
+            user="dadb",
+            password="",
+            host="localhost",    # or IP if remote
+            port="5432"          # default port
+        )
+        cursor = conn.cursor()
+
+        record = df.iloc[0].to_dict()
+        columns = record.keys()
+        values = [record[col] for col in columns]
+
+        insert_query = sql.SQL("""
+            INSERT INTO newpatients ({fields}) 
+            VALUES ({placeholders})
+            ON CONFLICT (patient_id, assessment_date) DO NOTHING;
+        """).format(
+            fields=sql.SQL(', ').join(map(sql.Identifier, columns)),
+            placeholders=sql.SQL(', ').join(sql.Placeholder() * len(columns))
+        )
+
+        cursor.execute(insert_query, values)
+        conn.commit()
+        cursor.close()
+        conn.close()
+        st.success("✅ Data saved to database.")
+    except Exception as e:
+        st.error(f"❌ Database insertion failed: {e}")
+
+def get_patient():
+    conn = psycopg2.connect(
+        dbname="HIS_FinalProject",
+        user="dadb",
+        password="",
+        host="localhost",    # or IP if remote
+        port="5432"          # default port
+    )
+
+    query = "SELECT * FROM newpatients;"
+    df = pd.read_sql(query, conn)
+    conn.close()
+    st.session_state.patient_df = df
+    return df
+
 def assessment_page():
     st.title("Alzheimer's Risk Assessment and Diagnosis Decision Support Tool")
 
@@ -147,7 +196,7 @@ def assessment_page():
     import joblib
     
     # Load model and scaler
-    model = joblib.load("model.pkl")
+    model = joblib.load("Final_Project_UI/model.pkl")
     #scaler = joblib.load("scaler.pkl")
     
     # Define prediction function
@@ -187,8 +236,9 @@ def assessment_page():
         except FileNotFoundError:
             df_existing = pd.DataFrame()
         
-        # Assign Patient ID
+        # Assign Patient ID & Physician
         patient_id = get_patient_id(name, birthdate, df_existing)
+        physician_id = st.session_state.physician_id
         
         # 🔢 Add tracking info to user input
         userinput["patient_id"] = patient_id
@@ -197,10 +247,15 @@ def assessment_page():
         userinput["assessment_date"] = assessment_date
         userinput["prediction"] = "High Risk" if prediction else "Low Risk"
         userinput["probability"] = round(probability, 2)
+        userinput['physician_id'] = physician_id
         
+        # new:
+        insert_into_database(userinput)
+        full_df = get_patient()
+
         # Save updated assessment
-        full_df = pd.concat([df_existing, userinput], ignore_index=True)
-        full_df.to_csv(save_path, index=False)
+        # full_df = pd.concat([df_existing, userinput], ignore_index=True)
+        # full_df.to_csv(save_path, index=False)
         st.success("Assessment saved. Patient ID: " + patient_id)
         
         patient_history = full_df[full_df["patient_id"] == patient_id]
@@ -226,21 +281,6 @@ def assessment_page():
             # Show recommendations if risk is > 20%
         if probability > 0.2:
             st.subheader("Lifestyle Recommendations")
-            # for rec in recommendations_data:
-            #     feature_key = rec["feature"]
-            #     condition = rec["condition"]
-                
-            #     # Pull the clean version of the field name
-            #     if "_age" in feature_key and condition(age):
-            #         st.write(f"Age: **{rec['recommendation']}**")
-            #     elif "genetic_risk_factor" in feature_key and condition(genetic_risk):
-            #         st.write(f"Risk Factor **{rec['recommendation']}**")
-            #     elif "family_history" in feature_key and condition(family_history):
-            #         st.write(f"Family History **{rec['recommendation']}**")
-            #     elif "social_engagement_level" in feature_key and condition(social_engagement):
-            #         st.write(f"Social Engagement **{rec['recommendation']}**")
-            #     elif "air_pollution_exposure" in feature_key and condition(air_pollution):
-            #         st.write(f"Air Pollution **{rec['recommendation']}**")
             for rec in recommendations_data:
                 feature_key = rec["feature"]
                 condition = rec["condition"]
@@ -302,12 +342,13 @@ def patient_search_page():
     search_term = st.text_input(f"Enter {search_by}")
 
     try:
-        df = pd.read_csv("assessment_results.csv")
+        #df = pd.read_csv("Final_Project_UI/assessment_results.csv")
+        df = st.session_state.patient_df
         # --- Show latest assessment per patient ---
         st.markdown("#### Latest Visits")
 
         # Convert to datetime
-        df["assessment_date"] = pd.to_datetime(df["assessment_date"], errors="coerce")
+        df["assessment_date"] = pd.to_datetime(df["assessment_date"], errors="coerce").dt.date
 
         # Sort by date and keep only latest record per patient_id
         latest_visits_df = df.sort_values("assessment_date", ascending=False).drop_duplicates(subset=["patient_id"])
@@ -529,7 +570,7 @@ def population_overview_page():
     st.write("This section provides a snapshot of the patient population in the dataset.")
 
     # Load dataset
-    data = pd.read_csv("alzheimers_prediction_dataset_usa_lc.csv")
+    data = pd.read_csv("Datasets/alzheimers_prediction_dataset_usa_lc.csv")
     data.rename(columns={"Alzheimer’s Diagnosis": "Alzheimer's Diagnosis"}, inplace=True)
     data.drop(columns=['country'], inplace=True)
 
@@ -609,30 +650,21 @@ def population_overview_page():
     st.subheader("Distribution of Categorical Features")
     plot_categorical_distribution(data, cat_features)
 
-# --- Sidebar navigation ---
-#with st.sidebar:
- #   selected = option_menu(
-  #      menu_title="",
-   #     options=[
-    #        "Welcome",
-     #      "Risk Assessment",
-      #      "Patient Search",
-       #     "Population Overview"
-        #],
-        #icons=[
-         #  "wave", "gear", "person", "bar-chart"
-        #],
-        #default_index=0
-    #)
+# Load patient data for physician
+def load_patient_data(phy_id):
+    conn = psycopg2.connect(
+        dbname="HIS_FinalProject",
+        user="dadb",
+        password="",
+        host="localhost",
+        port="5432"
+    )
+
+    df = pd.read_sql("SELECT * FROM NewPatients", conn)
+    conn.close()
+    return pd.DataFrame(df)
 
 def run_app():
-    # st.sidebar.title("Navigation")
-    # page = st.sidebar.radio("Go to", ["Alzheimer's Risk Assessment", "Patient Search"])
-
-    # if page == "Alzheimer's Risk Assessment":
-    #     assessment_page()
-    # elif page == "Patient Search":
-    #     patient_search_page()  
     if selected == 'Patient Search':
         patient_search_page()  
     elif selected == 'Risk Assessment':
@@ -647,27 +679,50 @@ def logout():
         st.session_state.pop(key, None)
     
 if menu == "Clinician Dashboard":
-    USERNAME = "clinician"
-    PASSWORD = "secure123"
-
     if "logged_in" not in st.session_state:
         st.session_state.logged_in = False
 
-    # Show login form only if not logged in
     if not st.session_state.logged_in:
         st.title("Clinician Login")
-        username_input = st.text_input("Username")
+        username_input = st.text_input("Username")  # physician_id
         password_input = st.text_input("Password", type="password")
 
         if st.button("Login"):
-            if username_input == USERNAME and password_input == PASSWORD:
-                st.session_state.logged_in = True
-                st.session_state.user_type = "Clinician Dashboard"
-                st.rerun()
-            else:
-                st.error("Incorrect username or password")
+            try:
+                # Connect to PostgreSQL
+                conn = psycopg2.connect(
+                    dbname="HIS_FinalProject",
+                    user="dadb",
+                    password="",
+                    host="localhost",
+                    port="5432"
+                )
+                cursor = conn.cursor()
 
-    # If logged in, show app with sidebar nav and logout
+                # Check credentials
+                cursor.execute(
+                    "SELECT physician_id FROM Physician WHERE physician_id = %s AND password = %s",
+                    (username_input, password_input)
+                )
+                result = cursor.fetchone()
+
+                if result:
+                    # Save login state and load data
+                    st.session_state.logged_in = True
+                    st.session_state.user_type = "Clinician Dashboard"
+                    st.session_state.physician_id = username_input
+
+                    # ✅ Load and store only assigned patients
+                    st.session_state.patient_df = load_patient_data(username_input)
+                    print(st.session_state.patient_df)
+
+                    st.rerun()
+                else:
+                    st.error("Incorrect username or password")
+                conn.close()
+            except Exception as e:
+                st.error(f"Database error: {e}")
+
     if st.session_state.logged_in:
         with st.sidebar:
             selected = option_menu(
@@ -684,6 +739,7 @@ if menu == "Clinician Dashboard":
             patient_search_page()
         elif selected == "Population Overview":
             population_overview_page()
+
 
 elif menu == "Patient Portal":
     if "patient_logged_in" not in st.session_state:
