@@ -14,8 +14,18 @@ st.set_page_config(
     page_title="Alzheimer's Risk Assessment and Diagnosis Decision Support Tool",
     layout="centered")
 
+# Sidebar information
+st.sidebar.title("About")
+st.sidebar.info("""This is an Alzheimer's Diagnosis Decision Support System prototype. 
+                While this tool can be used to provide a preliminary insight on a patient's 
+                potential risk of Alzheimer's, it is not a clinical diagnosis.""")
 
-
+if "user_type" not in st.session_state:
+    menu = st.radio("Select Mode", ["Clinician Dashboard", "Patient Portal"])
+    st.session_state.menu_selection = menu
+else:
+    menu = st.session_state.user_type
+    
 def assessment_page():
     st.title("Alzheimer's Risk Assessment and Diagnosis Decision Support Tool")
 
@@ -24,7 +34,6 @@ def assessment_page():
     # --- Patient Demographics ---
     st.header("Patient Profile (General)")
     
-    assessment_date = st.date_input("Date of Assessment")
     name = st.text_input("Patient Name")
     birthdate = st.date_input("Date of Birth", min_value=datetime.date(1900, 1, 1), max_value=datetime.date.today())
     age = st.number_input("Age (years)", min_value=18, max_value=120, step=1)
@@ -138,11 +147,11 @@ def assessment_page():
     import joblib
     
     # Load model and scaler
-    model = joblib.load("Final_Project_UI/model.pkl")
+    model = joblib.load("model.pkl")
     #scaler = joblib.load("scaler.pkl")
     
     # Define prediction function
-    def show_risk_level(model, userinput):
+    def show_risk_level(model, userinput, name, birthdate, assessment_date):
         
         prediction = model.predict(userinput)[0]
         probability = model.predict_proba(userinput)[0][1]
@@ -172,7 +181,7 @@ def assessment_page():
         """, unsafe_allow_html=True)
         
         # Save to CSV
-        save_path = "Final_Project_UI/assessment_results.csv"
+        save_path = "assessment_results.csv"
         try:
             df_existing = pd.read_csv(save_path)
         except FileNotFoundError:
@@ -261,17 +270,16 @@ def assessment_page():
     if st.button("Assess Cognitive Health Risk"):
         st.subheader("Preliminary Risk Insights")
         
-        # Call the prediction function
-        show_risk_level(model, userinput)
+        if name == "" or birthdate is None or age == 0:
+            st.error("Please fill in all required fields: name, birthdate, and age.")
+        else:
+            # Proceed with assessment
+            assessment_date = datetime.date.today()
+            show_risk_level(model, userinput, name, birthdate, assessment_date)
+    
         
     st.markdown("---")
     st.markdown("*This tool provides preliminary insight on a patient's potential risk of Alzheimer's and is not a clinical diagnosis.*")
-    
-    # Sidebar information
-    st.sidebar.title("About")
-    st.sidebar.info("""This is an Alzheimer's Diagnosis Decision Support System prototype. 
-                    While this tool can be used to provide a preliminary insight on a patient's 
-                    potential risk of Alzheimer's, it is not a clinical diagnosis.""")
 
 def get_bmi_category(bmi):
     try:
@@ -294,7 +302,7 @@ def patient_search_page():
     search_term = st.text_input(f"Enter {search_by}")
 
     try:
-        df = pd.read_csv("Final_Project_UI/assessment_results.csv")
+        df = pd.read_csv("assessment_results.csv")
         # --- Show latest assessment per patient ---
         st.markdown("#### Latest Visits")
 
@@ -521,7 +529,7 @@ def population_overview_page():
     st.write("This section provides a snapshot of the patient population in the dataset.")
 
     # Load dataset
-    data = pd.read_csv("Datasets/alzheimers_prediction_dataset_usa_lc.csv")
+    data = pd.read_csv("alzheimers_prediction_dataset_usa_lc.csv")
     data.rename(columns={"Alzheimer’s Diagnosis": "Alzheimer's Diagnosis"}, inplace=True)
     data.drop(columns=['country'], inplace=True)
 
@@ -602,20 +610,20 @@ def population_overview_page():
     plot_categorical_distribution(data, cat_features)
 
 # --- Sidebar navigation ---
-with st.sidebar:
-    selected = option_menu(
-        menu_title="",
-        options=[
-            "Welcome",
-            "Risk Assessment",
-            "Patient Search",
-            "Population Overview"
-        ],
-        icons=[
-            "wave", "gear", "person", "bar-chart"
-        ],
-        default_index=0
-    )
+#with st.sidebar:
+ #   selected = option_menu(
+  #      menu_title="",
+   #     options=[
+    #        "Welcome",
+     #      "Risk Assessment",
+      #      "Patient Search",
+       #     "Population Overview"
+        #],
+        #icons=[
+         #  "wave", "gear", "person", "bar-chart"
+        #],
+        #default_index=0
+    #)
 
 def run_app():
     # st.sidebar.title("Navigation")
@@ -632,25 +640,104 @@ def run_app():
     elif selected == 'Population Overview':
         population_overview_page()
 
-                    
-# --- Authentication flow ---
-USERNAME = "clinician"
-PASSWORD = "secure123"
 
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
+# --- AUTHENTICATION AND MAIN LOGIC ---
+def logout():
+    for key in ["logged_in", "patient_logged_in", "user_type", "patient_name", "patient_birthdate", "menu_selection"]:
+        st.session_state.pop(key, None)
+    
+if menu == "Clinician Dashboard":
+    USERNAME = "clinician"
+    PASSWORD = "secure123"
 
-if not st.session_state.logged_in:
-    st.title("Login Required")
+    if "logged_in" not in st.session_state:
+        st.session_state.logged_in = False
 
-    username_input = st.text_input("Username")
-    password_input = st.text_input("Password", type="password")
+    # Show login form only if not logged in
+    if not st.session_state.logged_in:
+        st.title("Clinician Login")
+        username_input = st.text_input("Username")
+        password_input = st.text_input("Password", type="password")
 
-    if st.button("Login"):
-        if username_input == USERNAME and password_input == PASSWORD:
-            st.session_state.logged_in = True
-            st.rerun()
-        else:
-            st.error("Incorrect username or password")
-else:
-    run_app()
+        if st.button("Login"):
+            if username_input == USERNAME and password_input == PASSWORD:
+                st.session_state.logged_in = True
+                st.session_state.user_type = "Clinician Dashboard"
+                st.rerun()
+            else:
+                st.error("Incorrect username or password")
+
+    # If logged in, show app with sidebar nav and logout
+    if st.session_state.logged_in:
+        with st.sidebar:
+            selected = option_menu(
+                menu_title="",
+                options=["Risk Assessment", "Patient Search", "Population Overview"],
+                icons=["clipboard", "search", "bar-chart"],
+                default_index=0
+            )
+            st.button("Logout", on_click=logout)
+
+        if selected == "Risk Assessment":
+            assessment_page()
+        elif selected == "Patient Search":
+            patient_search_page()
+        elif selected == "Population Overview":
+            population_overview_page()
+
+elif menu == "Patient Portal":
+    if "patient_logged_in" not in st.session_state:
+        st.session_state.patient_logged_in = False
+
+    if not st.session_state.patient_logged_in:
+        st.title("Patient Portal")
+        patient_name_input = st.text_input("Enter your full name")
+        birthdate_input = st.date_input("Enter your birthdate", min_value=datetime.date(1900, 1, 1))
+
+        if st.button("Login to View My Results"):
+            if patient_name_input.strip() == "" or birthdate_input is None:
+                st.error("Please enter both your name and birthdate.")
+            else:
+                st.session_state.patient_logged_in = True
+                st.session_state.user_type = "Patient Portal"
+                st.session_state.patient_name = patient_name_input
+                st.session_state.patient_birthdate = birthdate_input
+                st.rerun()
+
+    if st.session_state.get("patient_logged_in", False):
+        patient_name_input = st.session_state.patient_name
+        birthdate_input = st.session_state.patient_birthdate
+
+        st.success(f"Welcome back, {patient_name_input}!")
+        
+        import hashlib
+        def generate_patient_id(name, birthdate):
+            unique_str = f"{name.strip().lower()}_{birthdate.isoformat()}"
+            return hashlib.sha256(unique_str.encode()).hexdigest()[:8]
+
+        patient_id = generate_patient_id(patient_name_input, birthdate_input)
+
+        try:
+            df = pd.read_csv("assessment_results.csv")
+            history = df[df["patient_id"] == patient_id]
+
+            if history.empty:
+                st.info("No assessments found for this patient.")
+            else:
+                history["assessment_date"] = pd.to_datetime(history["assessment_date"], errors="coerce").dt.date
+
+                st.markdown(f"### Assessment History")
+                st.dataframe(history[["assessment_date", "prediction", "probability"]].sort_values("assessment_date", ascending=False))
+
+                chart = alt.Chart(history).mark_line(point=True).encode(
+                        x=alt.X('assessment_date:T', title='Assessment Date'),
+                        y=alt.Y('probability:Q', title='Probability'),
+                        tooltip=['assessment_date:T', 'probability:Q']
+                    ).properties(title="Risk Probability Over Time")
+
+                st.altair_chart(chart, use_container_width=True)
+
+        except FileNotFoundError:
+            st.error("No assessment data found.")
+
+        st.sidebar.button("Logout", on_click=logout)

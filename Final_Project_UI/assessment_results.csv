@@ -9,3 +9,6 @@ age,gender,education_level,bmi,physical_activity_level,smoking_status,alcohol_co
 73,Male,12,25.0,Medium,Former,Occasionally,Yes,Yes,Normal,Yes,53,Medium,Poor,Unhealthy,Medium,Retired,Married,Yes,Low,Medium,Medium,Urban,2025-04-23,High Risk,0.82,3ff18f07,Max Armstrong,1952-04-03
 69,Female,6,18.0,Medium,Never,Regularly,Yes,Yes,High,Yes,40,Medium,Poor,Unhealthy,Medium,Unemployed,Widowed,Yes,High,Low,Medium,Urban,2025-03-14,High Risk,0.7,7febe54d,Olivia Carter,1956-10-25
 58,Male,14,20.0,Low,Current,Regularly,No,No,Normal,No,86,Low,Good,Healthy,Low,Employed,Married,No,High,High,Low,Urban,2025-04-24,Low Risk,0.15,1607895d,Ethan Brooks,2025-04-24
+18,Male,0,36.0,Low,Never,Never,No,No,Normal,No,0,Low,Average,Average,Low,Employed,Single,No,Low,Low,Low,Urban,2025-04-24,Low Risk,0.02,d3f0f024,Ashna Patel,2015-09-17
+18,Male,0,10.0,Low,Current,Never,No,No,Normal,No,0,Low,Good,Average,Low,Employed,Single,No,Medium,Low,Low,Urban,2025-04-24,Low Risk,0.01,0087f531,,2025-04-24
+18,Male,0,10.0,Low,Never,Never,No,No,Normal,No,0,Low,Average,Average,Low,Employed,Single,No,Low,Low,Low,Urban,2025-04-24,Low Risk,0.02,0087f531,,2025-04-24
