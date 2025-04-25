@@ -792,6 +792,46 @@ elif menu == "Patient Portal":
                     ).properties(title="Risk Probability Over Time")
 
                 st.altair_chart(chart, use_container_width=True)
+                
+                latest_assessment = history.sort_values("assessment_date", ascending=False).iloc[0]
+
+                st.subheader("📝 Personalized Lifestyle Recommendations")
+                
+                # Display general risk-based advice
+                if latest_assessment["probability"] > 0.7:
+                    st.warning("Your last assessment indicates a **high risk**. Please consider consulting your healthcare provider for additional treatment and implementing the following lifestyle changes.")
+                elif latest_assessment["probability"] > 0.3:
+                    st.info("Your last assessment indicates a **moderate risk**. Maintaining healthy habits is very important.")
+                else:
+                    st.success("Your last assessment indicates a **low risk**. Keep up the healthy lifestyle!")
+                
+                # --- Detailed Lifestyle Recommendations based on features ---
+                recs = []
+                
+                # Check feature-specific advice
+                if latest_assessment.get("social_engagement_level", "").lower() == "low":
+                    recs.append("🔹 Increase social activities: join a club, volunteer, or schedule regular calls with friends and family.")
+                
+                if latest_assessment.get("air_pollution_exposure", "").lower() in ["medium", "high"]:
+                    recs.append("🔹 Minimize outdoor exposure on high air quality index (AQI) days and consider using indoor air purifiers.")
+                
+                if latest_assessment.get("dietary_habits", "").lower() == "unhealthy":
+                    recs.append("🔹 Improve dietary habits: incorporate more fruits, vegetables, and whole grains into your meals.")
+                
+                if latest_assessment.get("physical_activity_level", "").lower() == "low":
+                    recs.append("🔹 Increase physical activity: aim for at least 150 minutes of moderate exercise per week.")
+                
+                if latest_assessment.get("sleep_quality", "").lower() == "poor":
+                    recs.append("🔹 Prioritize good sleep hygiene: aim for 7-9 hours of quality sleep per night.")
+                
+                if latest_assessment.get("depression_level", "").lower() == "high":
+                    recs.append("🔹 Consider seeking support for mood and mental health management.")
+                
+                if not recs:
+                    st.write("✅ No additional lifestyle risk factors were detected in your last assessment.")
+                else:
+                    for rec in recs:
+                        st.write(rec)
 
         except FileNotFoundError:
             st.error("No assessment data found.")
