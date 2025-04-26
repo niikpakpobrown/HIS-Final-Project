@@ -85,7 +85,10 @@ def assessment_page():
     
     name = st.text_input("Patient Name")
     birthdate = st.date_input("Date of Birth", min_value=datetime.date(1900, 1, 1), max_value=datetime.date.today())
-    age = st.number_input("Age (years)", min_value=18, max_value=120, step=1)
+    if birthdate:
+        today = datetime.date.today()
+        age = today.year - birthdate.year - ((today.month, today.day) < (birthdate.month, birthdate.day))
+        st.number_input("Age (years)", value=age, disabled=True)
     sex = st.radio("Sex", options=["Male", "Female", "Other"])
     bmi = st.number_input("BMI (Body Mass Index)", min_value=10.0, max_value=60.0, step=0.1, format="%.1f")
     
@@ -345,28 +348,28 @@ def patient_search_page():
         #df = pd.read_csv("Final_Project_UI/assessment_results.csv")
         df = st.session_state.patient_df
         # --- Show latest assessment per patient ---
-        st.markdown("#### Latest Visits")
+       # st.markdown("#### Latest Visits")
 
         # Convert to datetime
-        df["assessment_date"] = pd.to_datetime(df["assessment_date"], errors="coerce").dt.date
+      #  df["assessment_date"] = pd.to_datetime(df["assessment_date"], errors="coerce").dt.date
 
         # Sort by date and keep only latest record per patient_id
-        latest_visits_df = df.sort_values("assessment_date", ascending=False).drop_duplicates(subset=["patient_id"])
+       # latest_visits_df = df.sort_values("assessment_date", ascending=False).drop_duplicates(subset=["patient_id"])
 
         # Select key columns to display
-        cols_to_display = [
-            "patient_id", "name", "birthdate", "age", "gender", "assessment_date",
-            "prediction", "probability"
-        ]
+        #cols_to_display = [
+          #  "patient_id", "name", "birthdate", "age", "gender", "assessment_date",
+         #   "prediction", "probability"
+       # ]
 
         # Ensure all columns are present
-        latest_visits_df = latest_visits_df[[col for col in cols_to_display if col in latest_visits_df.columns]]
+        #latest_visits_df = latest_visits_df[[col for col in cols_to_display if col in latest_visits_df.columns]]
 
         # Show in a clean table
-        st.dataframe(
-            latest_visits_df.sort_values(by="assessment_date", ascending=False).reset_index(drop=True),
-            use_container_width=True
-        )
+      #  st.dataframe(
+       #     latest_visits_df.sort_values(by="assessment_date", ascending=False).reset_index(drop=True),
+        #    use_container_width=True
+        #)
     except FileNotFoundError:
         st.warning("No assessment data found yet.")
         return
