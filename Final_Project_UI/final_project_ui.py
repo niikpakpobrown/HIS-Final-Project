@@ -1,4 +1,3 @@
-
 # To run the UI please open git bash and use this command line
 # % streamlit run final_project_ui.py
 import streamlit as st
@@ -56,7 +55,7 @@ def insert_into_database(df):
         conn.commit()
         cursor.close()
         conn.close()
-        st.success("✅ Data saved to database.")
+        #st.success("✅ Data saved to database.")
     except Exception as e:
         st.error(f"❌ Database insertion failed: {e}")
 
@@ -81,7 +80,7 @@ def assessment_page():
     st.markdown("This tool collects lifestyle and risk factors to assist in evaluating cognitive health and potential alzheimer's risk.")
     st.markdown("---")
     # --- Patient Demographics ---
-    st.header("Patient Profile (General)")
+    st.header("General")
     
     name = st.text_input("Patient Name")
     birthdate = st.date_input("Date of Birth", min_value=datetime.date(1900, 1, 1), max_value=datetime.date.today())
@@ -92,14 +91,14 @@ def assessment_page():
     sex = st.radio("Sex", options=["Male", "Female", "Other"])
     bmi = st.number_input("BMI (Body Mass Index)", min_value=10.0, max_value=60.0, step=0.1, format="%.1f")
     
-    st.header("Patient Profile (Demographic)")
+    st.header("Demographic")
     education = st.slider("Education Level", min_value=0, max_value=20, step=1)
     income_level = st.radio("Income Level", options=["Low", "Medium", "High"])
     employment_status = st.radio("Employment Status", ["Employed", "Unemployed", "Retired"])
     marital_status = st.radio("Marital Status", ["Single", "Married", "Widowed"])
     urban_rural = st.radio("Living Environment", ["Urban", "Rural"])
     
-    st.header("Patient Profile (Medical and Genetic History)")
+    st.header("Medical and Genetic History")
     diabetes = st.radio("Diagnosed with Diabetes?", ["No", "Yes"])
     hypertension = st.radio("Diagnosed with Hypertension?", ["No", "Yes"])
     cholesterol = st.radio("Cholesterol Level", ["Normal", "High"])
@@ -109,7 +108,7 @@ def assessment_page():
     
     
     # --- Lifestyle and Environmental Factors ---
-    st.header("Patient Profile (Lifestyle & Environmental Factors)")
+    st.header("Lifestyle and Environmental Factors")
     smoking_status = st.radio("Smoking Status", ["Never", "Former", "Current"])
     alcohol_consumption = st.radio("Alcohol Consumption", ["Never", "Occasionally", "Regularly"])
     physical_activity = st.radio("Physical Activity Level", ["Low", "Medium", "High"])
@@ -190,7 +189,45 @@ def assessment_page():
         "feature": "_air_pollution_exposure_Medium",
         "condition": lambda x: x == "Medium",
         "recommendation": "Moderate exposure to air pollution noted. Educate on minimizing exposure during high AQI days and suggest in-home air purification if feasible."
+    },
+    # added
+    {
+        "feature": "_smoking_status_Current",
+        "condition": lambda x: x == "Current",
+        "recommendation": "Counsel the patient on tabacco cessation."
+    },
+    {
+        "feature": "_alcohol_consumption_Regularly",
+        "condition": lambda x: x == "Regularly",
+        "recommendation": "Counsel the patient on alcohol reduction."
+    },
+    {
+        "feature": "physical_activity_Low",
+        "condition": lambda x: x == "Low",
+        "recommendation": "Encourage increasing moderate to vigorous physical activity to at least 150 minutes per week."
+    },
+    {
+        "feature": "dietary_habits_Unhealthy",
+        "condition": lambda x: x == "Unhealthy",
+        "recommendation": "Recommend adopting a Mediterranean diet or MIND diet, rich in fruits, vegetables, whole grains, nuts, legumes, fish, and olive oil. Reduce intake of processed foods, red meat, and sugary products."
+    },
+    {
+        "feature": "sleep_quality_Poor",
+        "condition": lambda x: x == "Poor",
+        "recommendation": "Recommend establishment of a consistent sleep-wake schedule, cognitive behavioral therapy for insomnia (CBT-I) if indicated, and sleep hygiene education."
+    },
+    {
+        "feature": "stress_levels_High",
+        "condition": lambda x: x == "High",
+        "recommendation": "Encourage adoption of stress reduction techniques such as mindfulness-based stress reduction (MBSR), yoga, or breathing exercises."
+    },
+    {
+        "feature": "depression_level_High",
+        "condition": lambda x: x == "High",
+        "recommendation": "Encourage engagement in social and cognitive activities to support emotional well-being."
     }
+
+
 ]
 
     recommendations_df = pd.DataFrame(recommendations_data)
@@ -259,7 +296,7 @@ def assessment_page():
         # Save updated assessment
         # full_df = pd.concat([df_existing, userinput], ignore_index=True)
         # full_df.to_csv(save_path, index=False)
-        st.success("Assessment saved. Patient ID: " + patient_id)
+        # st.success("Assessment saved. Patient ID: " + patient_id)
         
         patient_history = full_df[full_df["patient_id"] == patient_id]
     
@@ -298,6 +335,21 @@ def assessment_page():
                     label = "Social Engagement"
                 elif "air_pollution_exposure" in feature_key and condition(air_pollution):
                     label = "Environmental Exposure"
+                # added
+                elif "smoking_status" in feature_key and condition(smoking_status):
+                    label = "Smoking"
+                elif "alcohol_consumption" in feature_key and condition(alcohol_consumption):
+                    label = "Alcohol Consumption"
+                elif "physical_activity" in feature_key and condition(physical_activity):
+                    label = "Physical Activity"
+                elif "dietary_habits" in feature_key and condition(dietary_habits):
+                    label = "Dietary Habits"
+                elif "sleep_quality" in feature_key and condition(sleep_quality):
+                    label = "Sleep Quality"
+                elif "stress_levels" in feature_key and condition(stress_levels):
+                    label = "Stress Level"
+                elif "depression_level" in feature_key and condition(depression_level):
+                    label = "Depression Level"
                 else:
                     continue
 
@@ -348,28 +400,28 @@ def patient_search_page():
         #df = pd.read_csv("Final_Project_UI/assessment_results.csv")
         df = st.session_state.patient_df
         # --- Show latest assessment per patient ---
-       # st.markdown("#### Latest Visits")
+        st.markdown("#### Latest Visits")
 
-        # Convert to datetime
-      #  df["assessment_date"] = pd.to_datetime(df["assessment_date"], errors="coerce").dt.date
+        #Convert to datetime
+        df["assessment_date"] = pd.to_datetime(df["assessment_date"], errors="coerce").dt.date
 
-        # Sort by date and keep only latest record per patient_id
-       # latest_visits_df = df.sort_values("assessment_date", ascending=False).drop_duplicates(subset=["patient_id"])
+        #Sort by date and keep only latest record per patient_id
+        latest_visits_df = df.sort_values("assessment_date", ascending=False).drop_duplicates(subset=["patient_id"])
 
-        # Select key columns to display
-        #cols_to_display = [
-          #  "patient_id", "name", "birthdate", "age", "gender", "assessment_date",
-         #   "prediction", "probability"
-       # ]
+        #Select key columns to display
+        cols_to_display = [
+           "patient_id", "name", "birthdate", "age", "gender", "assessment_date",
+           "prediction", "probability"
+        ]
 
-        # Ensure all columns are present
-        #latest_visits_df = latest_visits_df[[col for col in cols_to_display if col in latest_visits_df.columns]]
+        #Ensure all columns are present
+        latest_visits_df = latest_visits_df[[col for col in cols_to_display if col in latest_visits_df.columns]]
 
-        # Show in a clean table
-      #  st.dataframe(
-       #     latest_visits_df.sort_values(by="assessment_date", ascending=False).reset_index(drop=True),
-        #    use_container_width=True
-        #)
+      #Show in a clean table
+        st.dataframe(
+            latest_visits_df.sort_values(by="assessment_date", ascending=False).reset_index(drop=True),
+            use_container_width=True
+            )
     except FileNotFoundError:
         st.warning("No assessment data found yet.")
         return
@@ -475,34 +527,34 @@ def patient_search_page():
                     
                     # --- Diabetes
                     if str(latest['diabetes']).lower() == "yes":
-                        st.markdown(f"**Diabetes:** {s_space}&nbsp;<span style='color: #dc3545; font-weight: bold;'>{latest['diabetes']} </span>", unsafe_allow_html=True)
+                        st.markdown(f"**Diabetes:** {s_space}&nbsp;<span style='color: #dc3545;'>{latest['diabetes']} </span>", unsafe_allow_html=True)
                     else:
                         st.markdown(f"**Diabetes:** {s_space}&nbsp;{latest['diabetes']}")
 
                     # --- Hypertension
                     if str(latest['hypertension']).lower() == "yes":
-                        st.markdown(f"**Hypertension:** &nbsp;&nbsp;&nbsp;<span style='color: #dc3545; font-weight: bold;'>{latest['hypertension']} </span>", unsafe_allow_html=True)
+                        st.markdown(f"**Hypertension:** &nbsp;&nbsp;&nbsp;<span style='color: #dc3545;'>{latest['hypertension']} </span>", unsafe_allow_html=True)
                     else:
                         st.markdown(f"**Hypertension:** &nbsp;&nbsp;&nbsp;{latest['hypertension']}")
                 with col2: 
                     # --- Cholesterol ---
                     chol = latest["cholesterol_level"]
                     if str(chol).lower() == "high":
-                        st.markdown(f"**Cholesterol:** {space}{ss_space}<span style='color: #dc3545; font-weight: bold;'>{chol}</span>", unsafe_allow_html=True)
+                        st.markdown(f"**Cholesterol:** {space}{ss_space}<span style='color: #dc3545;'>{chol}</span>", unsafe_allow_html=True)
                     else:
                         st.markdown(f"**Cholesterol:** {space}{ss_space}{chol}")
 
                     # --- Genetic Risk ---
                     genetic_risk = latest["genetic_risk_factor"]
                     if str(genetic_risk).lower() == "yes":
-                        st.markdown(f"**Genetic Risk:** &nbsp;{s_space}{ss_space}<span style='color: #dc3545; font-weight: bold;'>Yes</span>", unsafe_allow_html=True)
+                        st.markdown(f"**Genetic Risk:** &nbsp;{s_space}{ss_space}<span style='color: #dc3545;'>Yes</span>", unsafe_allow_html=True)
                     else:
                         st.markdown(f"**Genetic Risk:** &nbsp;{s_space}{ss_space}{genetic_risk}")
 
                     # --- Family History ---
                     family_history = latest["family_history"]
                     if str(family_history).lower() == "yes":
-                        st.markdown(f"**Family History:** {ss_space}{ss_space}<span style='color: #dc3545; font-weight: bold;'>Yes</span>", unsafe_allow_html=True)
+                        st.markdown(f"**Family History:** {ss_space}{ss_space}<span style='color: #dc3545;'>Yes</span>", unsafe_allow_html=True)
                     else:
                         st.markdown(f"**Family History:** {ss_space}{ss_space}{family_history}")
 
@@ -525,7 +577,7 @@ def patient_search_page():
 
                 # Risk highlighting function
                 def highlight(value, risks):
-                    return f"<span style='color: #dc3545; font-weight: bold;'>{value}</span>" if str(value).lower() in risks else value
+                    return f"<span style='color: #dc3545;'>{value}</span>" if str(value).lower() in risks else value
 
                 with col1:
                     smoking = highlight(latest["smoking_status"], ["current"])
@@ -540,7 +592,7 @@ def patient_search_page():
 
                 with col2:
                     stress = highlight(latest["stress_levels"], ["high"])
-                    st.markdown(f"**Stress Levels:** {space}{space6}{stress}", unsafe_allow_html=True)
+                    st.markdown(f"**Stress Level:** {space}{space6}{stress}", unsafe_allow_html=True)
                     depression = highlight(latest["depression_level"], ["high"])
                     pollution = highlight(latest["air_pollution_exposure"], ["high"])
                     engagement = highlight(latest["social_engagement_level"], ["low"])
@@ -549,13 +601,8 @@ def patient_search_page():
                     st.markdown(f"**Social Engagement:** {space6}&nbsp;&nbsp;{engagement}", unsafe_allow_html=True)
                     
 
-
-                # --- Assessment Date ---
-                st.markdown("<hr style='border: 2px solid #333;'>", unsafe_allow_html=True)
-                st.markdown("#### Latest Assessment Date")
-                st.info(f"{latest['assessment_date'].date() if pd.notnull(latest['assessment_date']) else 'N/A'}")
-
                 # --- Chart Section ---
+                st.markdown("<hr style='border: 2px solid #333;'>", unsafe_allow_html=True)
                 st.markdown("#### Risk Probability Over Time")
                 st.altair_chart(
                     alt.Chart(patient_data).mark_line(point=True).encode(
@@ -565,6 +612,76 @@ def patient_search_page():
                     ).properties(height=250),
                     use_container_width=True
                 )
+
+                # --- Assessment Date ---
+                st.markdown("#### Latest Assessment")
+                st.info(f"{latest['assessment_date'].date() if pd.notnull(latest['assessment_date']) else 'N/A'}")
+
+                # --- Notes
+                if latest['genetic_risk_factor'] == 'Yes':
+                    st.markdown(f"""
+                    <div style='border: 1px solid #ddd; padding: 1rem; border-radius: 8px; margin-bottom: 10px;'>
+                        <div style='font-weight: bold; font-size: 1.05rem; margin-bottom: 0.3rem;'>{'Genetic Risk'}</div>
+                        <div style='font-size: 0.9rem;'>{'Patient carries the APOE-ε4 allele. Recommend close monitoring, and emphasize aggressive management of modifiable risk factors.'}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                if latest['family_history'] == 'Yes':
+                    st.markdown(f"""
+                    <div style='border: 1px solid #ddd; padding: 1rem; border-radius: 8px; margin-bottom: 10px;'>
+                        <div style='font-weight: bold; font-size: 1.05rem; margin-bottom: 0.3rem;'>{'Family History'}</div>
+                        <div style='font-size: 0.9rem;'>{'Patient has family history. Recommend initiating baseline cognitive screening and documenting lifestyle risk factors for longitudinal tracking.'}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                if latest['smoking_status'] == 'Current' or latest['alcohol_consumption'] == 'Regularly':
+                    st.markdown(f"""
+                    <div style='border: 1px solid #ddd; padding: 1rem; border-radius: 8px; margin-bottom: 10px;'>
+                        <div style='font-weight: bold; font-size: 1.05rem; margin-bottom: 0.3rem;'>{'Substance Use'}</div>
+                        <div style='font-size: 0.9rem;'>{'Counsel the patient on alcohol reduction / tabacco cessation.'}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                if latest['dietary_habits'] == 'Unhealthy':
+                    st.markdown(f"""
+                    <div style='border: 1px solid #ddd; padding: 1rem; border-radius: 8px; margin-bottom: 10px;'>
+                        <div style='font-weight: bold; font-size: 1.05rem; margin-bottom: 0.3rem;'>{'Dietary Habits'}</div>
+                        <div style='font-size: 0.9rem;'>{'Recommend adopting a Mediterranean diet or MIND diet, rich in fruits, vegetables, whole grains, nuts, legumes, fish, and olive oil. Reduce intake of processed foods, red meat, and sugary products.'}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                if latest['physical_activity_level'] == 'Low':
+                    st.markdown(f"""
+                    <div style='border: 1px solid #ddd; padding: 1rem; border-radius: 8px; margin-bottom: 10px;'>
+                        <div style='font-weight: bold; font-size: 1.05rem; margin-bottom: 0.3rem;'>{'Physical Activity'}</div>
+                        <div style='font-size: 0.9rem;'>{'Encourage increasing moderate to vigorous physical activity to at least 150 minutes per week..'}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                if latest["sleep_quality"] == 'Poor':
+                    st.markdown(f"""
+                    <div style='border: 1px solid #ddd; padding: 1rem; border-radius: 8px; margin-bottom: 10px;'>
+                        <div style='font-weight: bold; font-size: 1.05rem; margin-bottom: 0.3rem;'>{'Sleep Quality'}</div>
+                        <div style='font-size: 0.9rem;'>{'Recommend establishment of a consistent sleep-wake schedule, cognitive behavioral therapy for insomnia (CBT-I) if indicated, and sleep hygiene education.'}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                if latest["stress_levels"] == 'High' or latest["depression_level"] == 'High':
+                    st.markdown(f"""
+                    <div style='border: 1px solid #ddd; padding: 1rem; border-radius: 8px; margin-bottom: 10px;'>
+                        <div style='font-weight: bold; font-size: 1.05rem; margin-bottom: 0.3rem;'>{'Mental Health'}</div>
+                        <div style='font-size: 0.9rem;'>{'Encourage adoption of stress reduction techniques such as mindfulness-based stress reduction (MBSR), yoga, or breathing exercises.'}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                if latest["air_pollution_exposure"] == 'High':
+                    st.markdown(f"""
+                    <div style='border: 1px solid #ddd; padding: 1rem; border-radius: 8px; margin-bottom: 10px;'>
+                        <div style='font-weight: bold; font-size: 1.05rem; margin-bottom: 0.3rem;'>{'Air Pollution'}</div>
+                        <div style='font-size: 0.9rem;'>{'Educate on minimizing exposure during high AQI days and suggest in-home air purification if feasible.'}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                if latest["social_engagement_level"] == 'Low':
+                    st.markdown(f"""
+                    <div style='border: 1px solid #ddd; padding: 1rem; border-radius: 8px; margin-bottom: 10px;'>
+                        <div style='font-weight: bold; font-size: 1.05rem; margin-bottom: 0.3rem;'>{'Social Engagement'}</div>
+                        <div style='font-size: 0.9rem;'>{'Counsel the patient on the importance of regular social interaction; consider referring to community programs or support groups.'}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                 
         else:
             st.warning("No matching records found.")
 
@@ -777,7 +894,7 @@ elif menu == "Patient Portal":
         patient_id = generate_patient_id(patient_name_input, birthdate_input)
 
         try:
-            df = pd.read_csv("assessment_results.csv")
+            df = pd.read_csv("Final_Project_UI/assessment_results.csv")
             history = df[df["patient_id"] == patient_id]
 
             if history.empty:
